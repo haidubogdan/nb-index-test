@@ -1,5 +1,6 @@
 package org.netbeans.test.project;
 
+import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.IOException;
@@ -8,8 +9,12 @@ import java.util.Collections;
 import java.util.List;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
+import javax.swing.event.ChangeListener;
+import org.netbeans.api.java.classpath.ClassPath;
+import org.netbeans.api.java.classpath.GlobalPathRegistry;
 import org.netbeans.api.project.Project;
 import org.netbeans.api.project.ProjectInformation;
+import org.netbeans.api.project.SourceGroup;
 import org.netbeans.spi.project.ActionProvider;
 import org.netbeans.spi.project.CopyOperationImplementation;
 import org.netbeans.spi.project.DeleteOperationImplementation;
@@ -18,6 +23,10 @@ import org.netbeans.spi.project.ui.support.DefaultProjectOperations;
 import org.openide.filesystems.FileObject;
 import org.openide.util.*;
 import org.openide.util.lookup.Lookups;
+import org.netbeans.api.project.Sources;
+import org.netbeans.spi.project.ui.*;
+import org.openide.filesystems.FileChangeListener;
+import org.openide.filesystems.FileUtil;
 
 /**
  *
@@ -28,6 +37,8 @@ public class TestProject implements Project {
     private final FileObject projectDir;
     private final ProjectState state;
     private Lookup lkp;
+    private volatile ClassPath sourcePath;
+    volatile ClassPathProviderImpl.PathImpl pathImpl;
 
     public TestProject(FileObject projectDir, ProjectState state) {
         this.projectDir = projectDir;
@@ -58,13 +69,24 @@ public class TestProject implements Project {
     public Lookup getLookup() {
         if (lkp == null) {
             lkp = Lookups.fixed(new Object[]{
-                state, new ActionProviderImpl(),
+                state,
+                new ClassPathProviderImpl(this),
+                new SourcesImpl(),
+                new ActionProviderImpl(),
                 new DemoDeleteOperation(),
                 new DemoCopyOperation(this),
                 new Info(),
                 new TestProjectLogicalView(this),});
         }
         return lkp;
+    }
+
+    private ClassPath getSourceClassPath() {
+        if (sourcePath == null) {
+            pathImpl = new ClassPathProviderImpl.PathImpl(this);
+            sourcePath = ClassPathProviderImpl.createProjectClasspath(pathImpl);
+        }
+        return sourcePath;
     }
 
     private final class ActionProviderImpl implements ActionProvider {
@@ -98,6 +120,61 @@ public class TestProject implements Project {
                 throw new IllegalArgumentException(command);
             }
         }
+    }
+
+    private class SourcesImpl implements Sources {
+
+        public SourcesImpl() {
+        }
+
+        public SourceGroup[] getSourceGroups(String type) {
+            SourceGroup[] sourceGroup = new SourceGroup[]{new SourceGroupImpl()};
+            return sourceGroup;
+        }
+
+        public void addChangeListener(ChangeListener listener) {
+        }
+
+        public void removeChangeListener(ChangeListener listener) {
+        }
+
+    }
+
+    private class SourceGroupImpl implements SourceGroup {
+
+        public SourceGroupImpl() {
+        }
+
+        @Override
+        public FileObject getRootFolder() {
+            return projectDir;
+        }
+
+        @Override
+        public String getName() {
+            return "Sources";
+        }
+
+        @Override
+        public String getDisplayName() {
+            return "Sources";
+        }
+
+        @Override
+        public Icon getIcon(boolean opened) {
+            return null;
+        }
+
+        public boolean contains(FileObject file) {
+            return FileUtil.isParentOf(projectDir, file);
+        }
+
+        public void addPropertyChangeListener(PropertyChangeListener listener) {
+        }
+
+        public void removePropertyChangeListener(PropertyChangeListener listener) {
+        }
+
     }
 
     private final class DemoDeleteOperation implements DeleteOperationImplementation {
@@ -177,5 +254,31 @@ public class TestProject implements Project {
         public Project getProject() {
             return TestProject.this;
         }
+    }
+
+    private static class OpenHookImpl extends ProjectOpenedHook implements PropertyChangeListener {
+
+        private final TestProject project;
+        private FileChangeListener siteRootChangesListener;
+
+        public OpenHookImpl(TestProject project) {
+            this.project = project;
+        }
+
+        @Override
+        protected void projectOpened() {
+            GlobalPathRegistry.getDefault().register(ClassPathProviderImpl.SOURCE_CP, new ClassPath[]{project.getSourceClassPath()});
+        }
+
+        @Override
+        protected void projectClosed() {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }
+
+        @Override
+        public void propertyChange(PropertyChangeEvent evt) {
+            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+        }
+
     }
 }

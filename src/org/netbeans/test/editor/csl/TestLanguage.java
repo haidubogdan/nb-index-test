@@ -7,8 +7,10 @@ import org.netbeans.core.spi.multiview.text.MultiViewEditorElement;
 import org.netbeans.modules.csl.api.CodeCompletionHandler;
 import org.netbeans.modules.csl.spi.DefaultLanguageConfig;
 import org.netbeans.modules.csl.spi.LanguageRegistration;
+import org.netbeans.modules.parsing.spi.indexing.EmbeddingIndexerFactory;
 import org.netbeans.modules.parsing.spi.indexing.PathRecognizerRegistration;
 import org.netbeans.test.editor.lexer.TestTokenId;
+import org.netbeans.test.indexing.TestIndexer;
 import org.openide.windows.TopComponent;
 import org.openide.util.Lookup;
 
@@ -50,5 +52,10 @@ public class TestLanguage extends DefaultLanguageConfig {
     @Override
     public CodeCompletionHandler getCompletionHandler() {
         return new TestCompletion();
+    }
+    
+    @Override
+    public EmbeddingIndexerFactory getIndexerFactory() {
+        return new TestIndexer.Factory();
     }
 }
