@@ -24,6 +24,7 @@ import org.openide.filesystems.FileObject;
 import org.openide.util.*;
 import org.openide.util.lookup.Lookups;
 import org.netbeans.api.project.Sources;
+import org.netbeans.spi.project.support.ant.AntProjectHelper;
 import org.netbeans.spi.project.ui.*;
 import org.openide.filesystems.FileChangeListener;
 import org.openide.filesystems.FileUtil;
@@ -34,15 +35,34 @@ import org.openide.filesystems.FileUtil;
  */
 public class TestProject implements Project {
 
-    private final FileObject projectDir;
-    private final ProjectState state;
+    FileObject projectDir;
+    ProjectState state;
     private Lookup lkp;
     private volatile ClassPath sourcePath;
     volatile ClassPathProviderImpl.PathImpl pathImpl;
-
+    private final ThreadLocal<Boolean> projectPropertiesSave;
+    AntProjectHelper helper;
+    
     public TestProject(FileObject projectDir, ProjectState state) {
         this.projectDir = projectDir;
         this.state = state;
+        this.projectPropertiesSave =  new ThreadLocal<Boolean>() {
+            @Override
+            protected Boolean initialValue() {
+                return Boolean.TRUE;
+            }
+        };
+    }
+
+    TestProject(AntProjectHelper helper) throws IOException {
+        this.projectPropertiesSave = new ThreadLocal<Boolean>() {
+            @Override
+            protected Boolean initialValue() {
+                return Boolean.FALSE;
+            }
+        };
+        this.helper = helper;
+        
     }
 
     @Override
@@ -72,6 +92,7 @@ public class TestProject implements Project {
                 state,
                 new ClassPathProviderImpl(this),
                 new SourcesImpl(),
+                new OpenHookImpl(this),
                 new ActionProviderImpl(),
                 new DemoDeleteOperation(),
                 new DemoCopyOperation(this),

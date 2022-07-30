@@ -2,6 +2,7 @@ package org.netbeans.test.editor.csl;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +33,12 @@ public class TestCompletion implements CodeCompletionHandler {
         FileObject current = completionContext.getParserResult().getSnapshot().getSource().getFileObject();
         TestProjectSupport support = TestProjectSupport.findFor(current);
         List<CompletionProposal> cssModulesCompletionProposals = TestModuleSupport.getCompletionProposals(completionContext);
+          
+        Map<FileObject, String> s1 = support.getIndex().findByPrefix("x_value", "");
+        Map<FileObject, String> s2 = support.getIndex().findByPrefix("search_me", "");
+        Map<FileObject, String> s3 = support.getIndex().findByPrefix("cached", "");
+        int x = 3;
+
         return null;
     }
 

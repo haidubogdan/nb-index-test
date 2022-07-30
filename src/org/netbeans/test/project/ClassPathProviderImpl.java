@@ -3,6 +3,7 @@ package org.netbeans.test.project;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.netbeans.api.java.classpath.ClassPath;
@@ -39,7 +40,7 @@ public class ClassPathProviderImpl implements ClassPathProvider {
         }
         return null;
     }
-
+    
     public static class PathImpl implements FilteringPathResourceImplementation {
 
         private final TestProject project;
@@ -56,7 +57,13 @@ public class ClassPathProviderImpl implements ClassPathProvider {
 
         @Override
         public URL[] getRoots() {
-            throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+            List<URL> result = new ArrayList<>();
+            FileObject projectDir = this.project.getProjectDirectory();
+            result.add(projectDir.toURL());
+            for (FileObject file :projectDir.getChildren()){
+                result.add(file.toURL());
+            }
+            return result.toArray(new URL[result.size()]);
         }
         
         @Override

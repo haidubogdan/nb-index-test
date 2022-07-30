@@ -9,7 +9,10 @@ import org.netbeans.modules.parsing.spi.indexing.Context;
 import org.netbeans.modules.parsing.spi.indexing.EmbeddingIndexer;
 import org.netbeans.modules.parsing.spi.indexing.EmbeddingIndexerFactory;
 import org.netbeans.modules.parsing.spi.indexing.Indexable;
+import org.netbeans.modules.parsing.spi.indexing.support.IndexDocument;
 import org.netbeans.modules.parsing.spi.indexing.support.IndexingSupport;
+import org.openide.filesystems.FileObject;
+import org.openide.util.Exceptions;
 
 /**
  *
@@ -20,8 +23,19 @@ public class TestIndexer extends EmbeddingIndexer {
     private static final Logger LOGGER = Logger.getLogger(TestIndexer.class.getSimpleName());
 
     @Override
-    protected void index(Indexable indxbl, Parser.Result result, Context cntxt) {
-        System.out.println("txt2 indexing");
+    protected void index(Indexable indexable, Parser.Result result, Context context) {
+        try {
+            System.out.println("txt2 indexing");
+            FileObject fo = result.getSnapshot().getSource().getFileObject();
+            int x = 1;
+            IndexingSupport support = IndexingSupport.getInstance(context);
+            IndexDocument document = support.createDocument(indexable);
+            document.addPair("cached", Boolean.TRUE.toString(), true, true);
+            document.addPair("x_value", "search_me", true, true);
+            support.addDocument(document);
+        } catch (IOException ex) {
+            Exceptions.printStackTrace(ex);
+        }
     }
 
     public static class Factory extends EmbeddingIndexerFactory {
