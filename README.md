@@ -1,3 +1,3 @@
 # nb-index-test
 
-Sample editor with custom lexer, project and indezing
+Sample editor with custom lexer, project and indexing
